@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Arquitectura Web + Protocolos HTTP</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1a2744;
+      --blue: #2563eb;
+      --blue-light: #3b82f6;
+      --cyan: #06b6d4;
+      --bg: #0f1623;
+      --surface: #1a2237;
+      --surface2: #232d42;
+      --border: #2e3a52;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--cyan);
+      letter-spacing: -0.02em;
+      padding: 1rem 1.5rem 1rem 0;
+      border-right: 1px solid var(--border);
+      margin-right: 1rem;
+      white-space: nowrap;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav-tab {
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+    /* MAIN */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(6,182,212,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(6,182,212,0.3);
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 span { color: var(--cyan); }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 550px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* CARDS GRID */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--blue-light);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    .card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* SECTION TITLES */
+    .section-header {
+      margin-bottom: 2rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .section-header p {
+      color: var(--muted);
+      margin-top: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    /* CLIENT-SERVER DIAGRAM */
+    .diagram-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .flow-node {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.5rem;
+      text-align: center;
+      min-width: 130px;
+    }
+
+    .flow-node .node-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .flow-node .node-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .flow-node .node-name { font-weight: 700; font-size: 0.95rem; margin-top: 0.2rem; }
+
+    .flow-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 120px;
+    }
+
+    .arrow-label {
+      font-size: 0.68rem;
+      font-family: var(--mono);
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .arrow-req { background: rgba(37,99,235,0.15); color: var(--blue-light); }
+    .arrow-res { background: rgba(34,197,94,0.15); color: var(--green); }
+
+    .arrow-line {
+      height: 2px;
+      width: 100%;
+      background: var(--border);
+      position: relative;
+    }
+
+    /* VERBOS HTTP */
+    .verbos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .verbo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .verbo-badge {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-get { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-post { background: rgba(37,99,235,0.15); color: var(--blue-light); border: 1px solid rgba(37,99,235,0.3); }
+    .badge-put { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+    .badge-patch { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+    .badge-delete { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+    .verbo-info h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .verbo-info p { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+    /* STATUS CODES */
+    .status-group { margin-bottom: 1.5rem; }
+    .status-group-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .status-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+
+    .status-code {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      min-width: 3rem;
+    }
+
+    .status-2xx { color: var(--green); }
+    .status-4xx { color: var(--amber); }
+    .status-5xx { color: var(--red); }
+
+    .status-name { font-weight: 600; font-size: 0.85rem; min-width: 9rem; }
+    .status-desc { font-size: 0.78rem; color: var(--muted); }
+
+    /* URL DEMO */
+    .url-demo {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .url-bar {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .url-parts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .url-part {
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
+    .part-protocol { background: rgba(168,85,247,0.15); color: var(--purple); }
+    .part-domain   { background: rgba(37,99,235,0.15);  color: var(--blue-light); }
+    .part-path     { background: rgba(6,182,212,0.15);   color: var(--cyan); }
+    .part-query    { background: rgba(245,158,11,0.15);  color: var(--amber); }
+    .part-fragment { background: rgba(34,197,94,0.15);   color: var(--green); }
+
+    .url-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* SPA vs MPA */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) { .comparison-grid { grid-template-columns: 1fr; } }
+
+    .compare-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .compare-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .compare-card .subtitle {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-bottom: 1rem;
+    }
+
+    .compare-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .compare-list li {
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding-left: 1.2rem;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .compare-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--cyan);
+      font-size: 0.7rem;
+    }
+
+    /* DEMO INTERACTIVO */
+    .demo-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .demo-toolbar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .method-select {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+    }
+
+    .url-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+
+    .send-btn {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 1.2rem;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .send-btn:hover { background: var(--blue-light); }
+
+    .demo-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 280px;
+    }
+
+    @media (max-width: 640px) { .demo-body { grid-template-columns: 1fr; } }
+
+    .demo-pane {
+      padding: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .demo-pane:last-child { border-right: none; }
+
+    .pane-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .demo-code {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .code-key { color: var(--cyan); }
+    .code-val { color: var(--amber); }
+    .code-str { color: var(--green); }
+    .code-num { color: var(--purple); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .pill-ok { background: rgba(34,197,94,0.15); color: var(--green); }
+    .pill-err { background: rgba(239,68,68,0.15); color: var(--red); }
+    .pill-loading { background: rgba(245,158,11,0.15); color: var(--amber); }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* HEADERS */
+    .headers-table { width: 100%; border-collapse: collapse; }
+    .headers-table th {
+      text-align: left;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .headers-table td {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.78rem;
+      font-family: var(--mono);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .headers-table tr:last-child td { border-bottom: none; }
+
+    .th-name { color: var(--cyan); }
+    .th-val { color: var(--text); }
+    .th-desc { color: var(--muted); font-family: var(--sans); font-size: 0.75rem; }
+
+    /* UTIL */
+    .tag {
+      display: inline-block;
+      background: rgba(6,182,212,0.1);
+      color: var(--cyan);
+      border: 1px solid rgba(6,182,212,0.2);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      padding: 1px 6px;
+    }
+
+    .info-box {
+      background: rgba(6,182,212,0.05);
+      border: 1px solid rgba(6,182,212,0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .info-box strong { color: var(--cyan); font-weight: 600; }
+
+    .mb-1 { margin-bottom: 1rem; }
+    .mb-2 { margin-bottom: 2rem; }
+    .mt-1 { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">HTTP/Web</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showSection('inicio')">Inicio</div>
+    <div class="nav-tab" onclick="showSection('cliente-servidor')">Cliente-Servidor</div>
+    <div class="nav-tab" onclick="showSection('verbos')">Verbos HTTP</div>
+    <div class="nav-tab" onclick="showSection('status')">Códigos Estado</div>
+    <div class="nav-tab" onclick="showSection('headers')">Headers</div>
+    <div class="nav-tab" onclick="showSection('urls')">URLs & URIs</div>
+    <div class="nav-tab" onclick="showSection('spa-mpa')">SPA vs MPA</div>
+    <div class="nav-tab" onclick="showSection('demo')">Demo Interactivo</div>
+  </div>
+</nav>
+
+<main>
+
+  <!-- INICIO -->
+  <section id="inicio" class="section active">
+    <div class="hero">
+      <div class="hero-badge">Tema 1 · Fundamentos</div>
+      <h1>Arquitectura Web<br/><span>+ Protocolos HTTP</span></h1>
+      <p>Explora todos los conceptos del modelo cliente-servidor, HTTP, verbos, códigos de estado, headers y más.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="card" onclick="showSection('cliente-servidor')">
+        <div class="card-icon">🔄</div>
+        <h3>Modelo Cliente-Servidor</h3>
+        <p>Visualiza el flujo de comunicación entre cliente y servidor con HTTP/HTTPS.</p>
+      </div>
+      <div class="card" onclick="showSection('verbos')">
+        <div class="card-icon">⚡</div>
+        <h3>Verbos HTTP</h3>
+        <p>GET, POST, PUT, DELETE, PATCH — cuándo y cómo usar cada uno.</p>
+      </div>
+      <div class="card" onclick="showSection('status')">
+        <div class="card-icon">🔢</div>
+        <h3>Códigos de Estado</h3>
+        <p>200, 201, 400, 401, 403, 404, 500 — qué significa cada respuesta del servidor.</p>
+      </div>
+      <div class="card" onclick="showSection('headers')">
+        <div class="card-icon">📋</div>
+        <h3>Headers HTTP</h3>
+        <p>Content-Type, Authorization y otros headers importantes en cada petición.</p>
+      </div>
+      <div class="card" onclick="showSection('urls')">
+        <div class="card-icon">🔗</div>
+        <h3>URLs, URIs & Parámetros</h3>
+        <p>Diferencia entre query params y path params, anatomía de una URL.</p>
+      </div>
+      <div class="card" onclick="showSection('spa-mpa')">
+        <div class="card-icon">🖥️</div>
+        <h3>SPA vs MPA</h3>
+        <p>Cuándo elegir una Single Page App vs una Multi Page Application.</p>
+      </div>
+      <div class="card" onclick="showSection('demo')">
+        <div class="card-icon">🚀</div>
+        <h3>Demo Interactivo</h3>
+        <p>Prueba peticiones HTTP reales contra una API pública y analiza request/response.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIENTE SERVIDOR -->
+  <section id="cliente-servidor" class="section">
+    <div class="section-header">
+      <h2>Modelo Cliente-Servidor</h2>
+      <p>El flujo de una petición HTTP desde el navegador hasta el servidor y de vuelta.</p>
+    </div>
+
+    <div class="diagram-container mb-2">
+      <div class="flow-diagram">
+        <div class="flow-node">
+          <div class="node-icon">🌐</div>
+          <div class="node-label">Cliente</div>
+          <div class="node-name">Navegador</div>
+        </div>
+        <div class="flow-arrow">
+          <span class="arrow-label arrow-req">→ REQUEST</span>
+          <div class="arrow-line"></div>
+          <span class="arrow-label arrow-res">← RESPONSE</span>
+        </div>
+        <div class="flow-node">
+          <div class="node-icon">📡</div>
+          <div class="node-label">Protocolo</div>
+          <div class="node-name">HTTP / HTTPS</div>
+        </div>
+        <div class="flow-arrow">
+          <span class="arrow-label arrow-req">→ :443</span>
+          <div class="arrow-line"></div>
+          <span class="arrow-label arrow-res">← JSON/HTML</span>
+        </div>
+        <div class="flow-node">
+          <div class="node-icon">🖥️</div>
+          <div class="node-label">Servidor</div>
+          <div class="node-name">Web Server</div>
+        </div>
+        <div class="flow-arrow">
+          <span class="arrow-label arrow-req">→ Query</span>
+          <div class="arrow-line"></div>
+          <span class="arrow-label arrow-res">← Data</span>
+        </div>
+        <div class="flow-node">
+          <div class="node-icon">🗄️</div>
+          <div class="node-label">Almacén</div>
+          <div class="node-name">Base de Datos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <h3>HTTP — Puerto 80</h3>
+        <p>Protocolo de Transferencia de Hipertexto. Texto plano, sin cifrado. Hoy en desuso en producción.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔐</div>
+        <h3>HTTPS — Puerto 443</h3>
+        <p>HTTP + TLS/SSL. Todo el tráfico va cifrado. Es el estándar obligatorio en la web moderna.</p>
+      </div>
+    </div>
+
+    <div class="info-box mt-1">
+      <strong>¿Qué pasa exactamente?</strong> El cliente envía un <strong>HTTP Request</strong> (método + URL + headers + body opcional). El servidor procesa la petición, accede a la base de datos si es necesario, y devuelve un <strong>HTTP Response</strong> (código de estado + headers + body con datos).
+    </div>
+  </section>
+
+  <!-- VERBOS -->
+  <section id="verbos" class="section">
+    <div class="section-header">
+      <h2>Verbos HTTP</h2>
+      <p>Los métodos que definen qué acción se quiere realizar sobre un recurso.</p>
+    </div>
+    <div class="verbos-grid mb-2">
+      <div class="verbo-card">
+        <span class="verbo-badge badge-get">GET</span>
+        <div class="verbo-info">
+          <h4>Leer / Obtener</h4>
+          <p>Trae datos del servidor. No modifica nada. Idempotente y sin body.</p>
+        </div>
+      </div>
+      <div class="verbo-card">
+        <span class="verbo-badge badge-post">POST</span>
+        <div class="verbo-info">
+          <h4>Crear recurso</h4>
+          <p>Envía datos al servidor para crear un nuevo recurso. Lleva body con JSON.</p>
+        </div>
+      </div>
+      <div class="verbo-card">
+        <span class="verbo-badge badge-put">PUT</span>
+        <div class="verbo-info">
+          <h4>Reemplazar completo</h4>
+          <p>Reemplaza un recurso entero. Debes enviar todos los campos del objeto.</p>
+        </div>
+      </div>
+      <div class="verbo-card">
+        <span class="verbo-badge badge-patch">PATCH</span>
+        <div class="verbo-info">
+          <h4>Actualización parcial</h4>
+          <p>Modifica solo algunos campos de un recurso existente. Más eficiente que PUT.</p>
+        </div>
+      </div>
+      <div class="verbo-card">
+        <span class="verbo-badge badge-delete">DELETE</span>
+        <div class="verbo-info">
+          <h4>Eliminar recurso</h4>
+          <p>Borra el recurso indicado en la URL. Generalmente sin body en la petición.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-container">
+      <div class="pane-title">Ejemplo CRUD con una API de usuarios</div>
+      <div class="demo-code">
+<span class="code-key">GET</span>    /api/users          <span class="code-str">→ listar todos los usuarios</span>
+<span class="code-key">GET</span>    /api/users/<span class="code-num">42</span>       <span class="code-str">→ obtener usuario con id=42</span>
+<span class="code-key">POST</span>   /api/users          <span class="code-str">→ crear un usuario nuevo</span>
+<span class="code-key">PUT</span>    /api/users/<span class="code-num">42</span>       <span class="code-str">→ reemplazar usuario 42</span>
+<span class="code-key">PATCH</span>  /api/users/<span class="code-num">42</span>       <span class="code-str">→ actualizar email del usuario 42</span>
+<span class="code-key">DELETE</span> /api/users/<span class="code-num">42</span>       <span class="code-str">→ eliminar usuario 42</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS CODES -->
+  <section id="status" class="section">
+    <div class="section-header">
+      <h2>Códigos de Estado HTTP</h2>
+      <p>El servidor siempre responde con un código numérico que indica el resultado de la petición.</p>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-title">2xx — Éxito</div>
+      <div class="status-list">
+        <div class="status-item">
+          <span class="status-code status-2xx">200</span>
+          <span class="status-name">OK</span>
+          <span class="status-desc">Petición exitosa. El servidor devolvió los datos solicitados.</span>
+        </div>
+        <div class="status-item">
+          <span class="status-code status-2xx">201</span>
+          <span class="status-name">Created</span>
+          <span class="status-desc">Recurso creado correctamente. Típico de POST exitoso.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-title">4xx — Error del cliente</div>
+      <div class="status-list">
+        <div class="status-item">
+          <span class="status-code status-4xx">400</span>
+          <span class="status-name">Bad Request</span>
+          <span class="status-desc">La petición tiene sintaxis incorrecta o datos inválidos.</span>
+        </div>
+        <div class="status-item">
+          <span class="status-code status-4xx">401</span>
+          <span class="status-name">Unauthorized</span>
+          <span class="status-desc">No autenticado. Necesitas iniciar sesión o enviar un token.</span>
+        </div>
+        <div class="status-item">
+          <span class="status-code status-4xx">403</span>
+          <span class="status-name">Forbidden</span>
+          <span class="status-desc">Autenticado pero sin permiso. No tienes acceso a este recurso.</span>
+        </div>
+        <div class="status-item">
+          <span class="status-code status-4xx">404</span>
+          <span class="status-name">Not Found</span>
+          <span class="status-desc">El recurso solicitado no existe en el servidor.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-title">5xx — Error del servidor</div>
+      <div class="status-list">
+        <div class="status-item">
+          <span class="status-code status-5xx">500</span>
+          <span class="status-name">Internal Server Error</span>
+          <span class="status-desc">Error inesperado en el servidor. El problema es del backend.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HEADERS -->
+  <section id="headers" class="section">
+    <div class="section-header">
+      <h2>Headers HTTP Importantes</h2>
+      <p>Metadatos que viajan en cada petición y respuesta para comunicar formato, autenticación y más.</p>
+    </div>
+
+    <div class="diagram-container mb-1">
+      <div class="pane-title">Headers de Request</div>
+      <table class="headers-table">
+        <thead>
+          <tr>
+            <th>Header</th>
+            <th>Valor ejemplo</th>
+            <th>Para qué sirve</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="th-name">Content-Type</td>
+            <td class="th-val">application/json</td>
+            <td class="th-desc">Indica el formato del body que se envía al servidor.</td>
+          </tr>
+          <tr>
+            <td class="th-name">Authorization</td>
+            <td class="th-val">Bearer eyJhbGci...</td>
+            <td class="th-desc">Envía el token JWT para autenticación.</td>
+          </tr>
+          <tr>
+            <td class="th-name">Accept</td>
+            <td class="th-val">application/json</td>
+            <td class="th-desc">Le dice al servidor qué formato de respuesta espera el cliente.</td>
+          </tr>
+          <tr>
+            <td class="th-name">User-Agent</td>
+            <td class="th-val">Mozilla/5.0...</td>
+            <td class="th-desc">Identifica el cliente (navegador, app) que hace la petición.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="diagram-container">
+      <div class="pane-title">Headers de Response</div>
+      <table class="headers-table">
+        <thead>
+          <tr>
+            <th>Header</th>
+            <th>Valor ejemplo</th>
+            <th>Para qué sirve</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="th-name">Content-Type</td>
+            <td class="th-val">application/json; charset=utf-8</td>
+            <td class="th-desc">Indica el formato del body de la respuesta.</td>
+          </tr>
+          <tr>
+            <td class="th-name">Status</td>
+            <td class="th-val">200 OK</td>
+            <td class="th-desc">Código de estado de la respuesta.</td>
+          </tr>
+          <tr>
+            <td class="th-name">Cache-Control</td>
+            <td class="th-val">max-age=3600</td>
+            <td class="th-desc">Indica cuánto tiempo puede el cliente cachear la respuesta.</td>
+          </tr>
+          <tr>
+            <td class="th-name">Access-Control-Allow-Origin</td>
+            <td class="th-val">*</td>
+            <td class="th-desc">Política CORS — qué dominios pueden acceder a la API.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- URLs -->
+  <section id="urls" class="section">
+    <div class="section-header">
+      <h2>URLs, URIs y Parámetros</h2>
+      <p>La anatomía de una URL y la diferencia entre path params y query params.</p>
+    </div>
+
+    <div class="url-demo mb-2">
+      <div class="pane-title">Anatomía de una URL completa</div>
+      <div class="url-bar">
+        <span style="color:#a855f7">https://</span><span style="color:#3b82f6">api.ejemplo.com</span><span style="color:#06b6d4">/users/42/posts</span><span style="color:#f59e0b">?page=2&limit=10</span><span style="color:#22c55e">#comentarios</span>
+      </div>
+      <div class="url-parts">
+        <span class="url-part part-protocol">https:// → Protocolo</span>
+        <span class="url-part part-domain">api.ejemplo.com → Dominio</span>
+        <span class="url-part part-path">/users/42/posts → Path (incluye path param: 42)</span>
+        <span class="url-part part-query">?page=2&limit=10 → Query Params</span>
+        <span class="url-part part-fragment">#comentarios → Fragment</span>
+      </div>
+    </div>
+
+    <div class="comparison-grid mb-2">
+      <div class="compare-card">
+        <h3>Path Parameters</h3>
+        <div class="subtitle">/users/<span style="color:var(--cyan)">:id</span></div>
+        <ul class="compare-list">
+          <li>Identifican un recurso específico</li>
+          <li>Van dentro de la ruta de la URL</li>
+          <li>Son obligatorios para la petición</li>
+          <li>Ejemplo: <code style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan)">/products/99</code></li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h3>Query Parameters</h3>
+        <div class="subtitle">?<span style="color:var(--amber)">key=value</span></div>
+        <ul class="compare-list">
+          <li>Filtran, ordenan o paginan resultados</li>
+          <li>Van después del <code style="font-family:var(--mono);font-size:0.75rem;color:var(--amber)">?</code> en la URL</li>
+          <li>Son opcionales generalmente</li>
+          <li>Ejemplo: <code style="font-family:var(--mono);font-size:0.75rem;color:var(--amber)">?sort=name&page=3</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>URI vs URL:</strong> Una <strong>URI</strong> (Uniform Resource Identifier) es el identificador genérico de cualquier recurso. Una <strong>URL</strong> (Locator) es una URI que además indica <em>cómo acceder</em> al recurso (protocolo + ubicación). Toda URL es una URI, pero no toda URI es una URL.
+    </div>
+  </section>
+
+  <!-- SPA vs MPA -->
+  <section id="spa-mpa" class="section">
+    <div class="section-header">
+      <h2>SPA vs MPA</h2>
+      <p>Dos arquitecturas frontend con ventajas distintas según el tipo de aplicación.</p>
+    </div>
+
+    <div class="comparison-grid mb-2">
+      <div class="compare-card">
+        <h3 style="color:var(--cyan)">SPA</h3>
+        <div class="subtitle">Single Page Application</div>
+        <ul class="compare-list">
+          <li>Carga una sola página HTML al inicio</li>
+          <li>Navega sin recargar el navegador</li>
+          <li>Renderizado en el cliente (JS)</li>
+          <li>Mejor experiencia de usuario fluida</li>
+          <li>Más complejo para SEO</li>
+          <li>Ejemplos: React, Vue, Angular apps</li>
+        </ul>
+      </div>
+      <div class="compare-card">
+        <h3 style="color:var(--amber)">MPA</h3>
+        <div class="subtitle">Multi Page Application</div>
+        <ul class="compare-list">
+          <li>Cada ruta carga una página nueva del servidor</li>
+          <li>El servidor renderiza el HTML completo</li>
+          <li>Recarga completa en cada navegación</li>
+          <li>Excelente para SEO por defecto</li>
+          <li>Más simple de implementar</li>
+          <li>Ejemplos: sitios en WordPress, Django, Rails</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="diagram-container">
+      <div class="pane-title">Flujo de navegación comparado</div>
+      <div class="demo-code">
+<span class="code-key">SPA:</span>  Usuario hace clic → JS intercepta → fetch() → actualiza DOM parcial
+       <span class="code-str">Sin recarga, estado conservado, transición instantánea</span>
+
+<span class="code-key">MPA:</span>  Usuario hace clic → navegador envía GET → servidor devuelve HTML completo
+       <span class="code-str">Recarga completa, nueva página desde cero cada vez</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO INTERACTIVO -->
+  <section id="demo" class="section">
+    <div class="section-header">
+      <h2>Demo Interactivo</h2>
+      <p>Tres herramientas para entender HTTP en acción: DevTools simulado, navegador con Network real, y cliente de API.</p>
+    </div>
+
+    <!-- DEMO TABS -->
+    <div style="display:flex; gap:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:1.5rem;">
+      <button class="demo-tab-btn active" id="dtab-devtools" onclick="showDemoTab('devtools')">🛠️ DevTools Network</button>
+      <button class="demo-tab-btn" id="dtab-browser" onclick="showDemoTab('browser')">🌐 Peticiones del Navegador</button>
+      <button class="demo-tab-btn" id="dtab-api" onclick="showDemoTab('api')">⚡ Cliente de API</button>
+    </div>
+
+    <!-- ===== TAB 1: DEVTOOLS SIMULADO ===== -->
+    <div id="demo-devtools" class="demo-tab-content">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+
+        <!-- Barra del navegador simulada -->
+        <div style="background:#1e293b; padding:0.6rem 1rem; display:flex; align-items:center; gap:0.75rem; border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:5px;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+          </div>
+          <div style="flex:1;background:#0f172a;border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.75rem;font-family:var(--mono);font-size:0.78rem;color:var(--muted);">
+            https://jsonplaceholder.typicode.com
+          </div>
+          <button onclick="runDevtoolsDemo()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.9rem;font-family:var(--sans);font-size:0.75rem;font-weight:700;cursor:pointer;">Navegar →</button>
+        </div>
+
+        <!-- DevTools panel -->
+        <div style="background:#111827;">
+          <!-- DevTools tabs -->
+          <div style="display:flex;border-bottom:1px solid var(--border);padding:0 1rem;background:#0f172a;">
+            <span style="padding:0.5rem 0.9rem;font-size:0.72rem;color:var(--muted);cursor:default;">Elements</span>
+            <span style="padding:0.5rem 0.9rem;font-size:0.72rem;color:var(--muted);cursor:default;">Console</span>
+            <span style="padding:0.5rem 0.9rem;font-size:0.72rem;color:var(--cyan);border-bottom:2px solid var(--cyan);font-weight:700;cursor:default;">Network</span>
+            <span style="padding:0.5rem 0.9rem;font-size:0.72rem;color:var(--muted);cursor:default;">Sources</span>
+            <span style="padding:0.5rem 0.9rem;font-size:0.72rem;color:var(--muted);cursor:default;">Application</span>
+          </div>
+
+          <!-- Toolbar de filtros -->
+          <div style="padding:0.4rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:0.5rem;align-items:center;background:#0f172a;">
+            <span style="width:13px;height:13px;border-radius:50%;border:2px solid var(--muted);display:inline-block;"></span>
+            <span style="font-size:0.65rem;font-family:var(--mono);color:var(--muted);">Filter</span>
+            <div style="display:flex;gap:0.3rem;margin-left:0.5rem;">
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;background:rgba(6,182,212,0.15);color:var(--cyan);cursor:default;">All</span>
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;color:var(--muted);cursor:default;">Fetch/XHR</span>
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;color:var(--muted);cursor:default;">Doc</span>
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;color:var(--muted);cursor:default;">JS</span>
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;color:var(--muted);cursor:default;">CSS</span>
+              <span style="font-size:0.65rem;padding:1px 8px;border-radius:3px;color:var(--muted);cursor:default;">Img</span>
+            </div>
+          </div>
+
+          <!-- Tabla de requests -->
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:0.7rem;">
+              <thead>
+                <tr style="background:#0f172a;border-bottom:1px solid var(--border);">
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;white-space:nowrap;">Name</th>
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;">Status</th>
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;">Method</th>
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;">Type</th>
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;">Size</th>
+                  <th style="text-align:left;padding:0.4rem 0.75rem;color:var(--muted);font-weight:600;">Time</th>
+                </tr>
+              </thead>
+              <tbody id="networkTable">
+                <tr>
+                  <td colspan="6" style="padding:1.5rem;text-align:center;color:var(--muted);font-family:var(--sans);font-size:0.8rem;">
+                    Presiona "Navegar →" para simular peticiones HTTP como en DevTools real
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Panel detalle de request seleccionado -->
+          <div id="devtoolsDetail" style="display:none;border-top:1px solid var(--border);padding:1rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div>
+                <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Request Headers</div>
+                <div id="devReqHeaders" class="demo-code" style="font-size:0.68rem;line-height:1.7;"></div>
+              </div>
+              <div>
+                <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Response Headers</div>
+                <div id="devResHeaders" class="demo-code" style="font-size:0.68rem;line-height:1.7;"></div>
+              </div>
+            </div>
+            <div style="margin-top:1rem;">
+              <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Response Body (Preview)</div>
+              <div id="devResBody" class="demo-code" style="font-size:0.68rem;max-height:150px;overflow-y:auto;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="info-box mt-1">
+        <strong>¿Qué ves aquí?</strong> Esto simula exactamente lo que verías en Chrome DevTools → pestaña Network. Cada fila es una petición HTTP. Haz clic en una fila para ver los headers completos de request y response, igual que en el DevTools real. En clase puedes abrir el DevTools real con <strong>F12</strong> y comparar.
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: NAVEGADOR CON NETWORK ===== -->
+    <div id="demo-browser" class="demo-tab-content" style="display:none;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+        <div style="background:#1e293b;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.75rem;border-bottom:1px solid var(--border);">
+          <div style="display:flex;gap:5px;">
+            <span style="width:11px;height:11px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
+            <span style="width:11px;height:11px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+          </div>
+          <select id="browserSiteSelect" style="background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:0.3rem 0.5rem;font-family:var(--mono);font-size:0.72rem;flex:1;">
+            <option value="https://jsonplaceholder.typicode.com/posts">jsonplaceholder.typicode.com/posts</option>
+            <option value="https://jsonplaceholder.typicode.com/users">jsonplaceholder.typicode.com/users</option>
+            <option value="https://jsonplaceholder.typicode.com/comments?postId=1">jsonplaceholder.typicode.com/comments?postId=1</option>
+            <option value="https://jsonplaceholder.typicode.com/albums">jsonplaceholder.typicode.com/albums</option>
+          </select>
+          <button onclick="navigateBrowser()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:0.3rem 0.9rem;font-family:var(--sans);font-size:0.75rem;font-weight:700;cursor:pointer;">Ir →</button>
+        </div>
+
+        <!-- Área de contenido simulado del navegador -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;min-height:320px;">
+          <div style="padding:1rem;border-right:1px solid var(--border);">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Página renderizada</div>
+            <div id="browserPage" style="font-size:0.78rem;color:var(--muted);line-height:1.6;">Selecciona una página y presiona "Ir →"</div>
+          </div>
+          <div style="padding:1rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+              <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);">Peticiones HTTP detectadas</div>
+              <div id="browserStatusPill"></div>
+            </div>
+            <div id="browserNetworkLog" style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);display:flex;flex-direction:column;gap:0.4rem;">
+              Aquí aparecen las peticiones en tiempo real...
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="info-box mt-1">
+        <strong>¿Qué pasa aquí?</strong> Cuando un usuario navega a una URL, el navegador dispara peticiones HTTP. El panel derecho muestra esas peticiones en tiempo real — igual que la pestaña Network de DevTools, pero explicado paso a paso para la clase.
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: CLIENTE DE API ===== -->
+    <div id="demo-api" class="demo-tab-content" style="display:none;">
+      <div class="demo-panel">
+        <div class="demo-toolbar">
+          <select class="method-select" id="methodSelect" onchange="updateMethodColor()">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+          <input class="url-input" id="urlInput" type="text" value="https://jsonplaceholder.typicode.com/posts/1" placeholder="URL de la API..."/>
+          <button class="send-btn" onclick="sendRequest()">Enviar →</button>
+        </div>
+
+        <div style="padding:0.5rem 1rem;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:0.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Prueba rápida:</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('GET','https://jsonplaceholder.typicode.com/posts/1')">GET /posts/1</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('GET','https://jsonplaceholder.typicode.com/users/1')">GET /users/1</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('POST','https://jsonplaceholder.typicode.com/posts')">POST /posts</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('PUT','https://jsonplaceholder.typicode.com/posts/1')">PUT /posts/1</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('PATCH','https://jsonplaceholder.typicode.com/posts/1')">PATCH /posts/1</span>
+          <span class="tag" style="cursor:pointer" onclick="setEndpoint('DELETE','https://jsonplaceholder.typicode.com/posts/1')">DELETE /posts/1</span>
+          <span class="tag" style="cursor:pointer;background:rgba(239,68,68,0.1);color:var(--red);border-color:rgba(239,68,68,0.3)" onclick="setEndpoint('GET','https://jsonplaceholder.typicode.com/posts/9999')">404 Error</span>
+        </div>
+
+        <!-- Métricas -->
+        <div id="apiMetrics" style="display:none;padding:0.5rem 1rem;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:1.5rem;align-items:center;">
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Status</span>
+            <span id="metricStatus" style="font-family:var(--mono);font-size:0.75rem;font-weight:600;"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tiempo</span>
+            <span id="metricTime" style="font-family:var(--mono);font-size:0.75rem;color:var(--amber);font-weight:600;"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Tamaño</span>
+            <span id="metricSize" style="font-family:var(--mono);font-size:0.75rem;color:var(--purple);font-weight:600;"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.4rem;">
+            <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">Peticiones</span>
+            <span id="metricCount" style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan);font-weight:600;">0</span>
+          </div>
+        </div>
+
+        <div class="demo-body">
+          <div class="demo-pane">
+            <div class="pane-title">Request enviado</div>
+            <div id="requestPane" class="demo-code" style="color:var(--muted)">Presiona "Enviar" o elige un endpoint de prueba rápida...</div>
+          </div>
+          <div class="demo-pane">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+              <div class="pane-title" style="margin-bottom:0">Response del servidor</div>
+              <div id="statusPill"></div>
+            </div>
+            <div id="responsePane" class="demo-code" style="color:var(--muted)">Esperando respuesta...</div>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div style="border-top:1px solid var(--border);padding:0.75rem 1rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);">Historial de peticiones</div>
+            <button onclick="clearHistory()" style="font-size:0.65rem;color:var(--muted);background:none;border:none;cursor:pointer;">Limpiar</button>
+          </div>
+          <div id="historyList" style="display:flex;flex-direction:column;gap:0.3rem;max-height:120px;overflow-y:auto;">
+            <span style="font-size:0.75rem;color:var(--muted);font-style:italic;">Sin peticiones aún...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box mt-1">
+        <strong>Esto es como Postman o Insomnia</strong> — herramientas que todo desarrollador usa para probar APIs antes de integrarlas en código. Puedes cambiar el verbo, la URL y ver exactamente qué responde el servidor. Los botones rojos simulan errores reales.
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<style>
+.demo-tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.demo-tab-btn:last-child { border-right: none; }
+.demo-tab-btn:hover { background: var(--surface2); color: var(--text); }
+.demo-tab-btn.active { background: var(--surface2); color: var(--cyan); }
+
+.network-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.network-row:hover { background: rgba(6,182,212,0.05); }
+.network-row.selected { background: rgba(6,182,212,0.1); }
+</style>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const map = {
+    'inicio': 0, 'cliente-servidor': 1, 'verbos': 2, 'status': 3,
+    'headers': 4, 'urls': 5, 'spa-mpa': 6, 'demo': 7
+  };
+  tabs[map[id]].classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showDemoTab(tab) {
+  document.querySelectorAll('.demo-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.demo-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('demo-' + tab).style.display = 'block';
+  document.getElementById('dtab-' + tab).classList.add('active');
+}
+
+/* ===================== DEVTOOLS DEMO ===================== */
+const devtoolsRequests = [
+  { name: 'jsonplaceholder.typicode.com', status: 200, method: 'GET', type: 'document', size: '2.1 kB', time: '124 ms', url: 'https://jsonplaceholder.typicode.com', reqHeaders: { 'Accept': 'text/html,application/xhtml+xml', 'User-Agent': 'Mozilla/5.0 (Chrome)', 'Accept-Language': 'es-ES,es;q=0.9', 'Connection': 'keep-alive' }, resHeaders: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=14400', 'server': 'Cowboy', 'x-powered-by': 'Express' }, body: { message: 'JSONPlaceholder', version: '0.6.0', homepage: 'https://jsonplaceholder.typicode.com' } },
+  { name: 'posts', status: 200, method: 'GET', type: 'fetch', size: '26.8 kB', time: '89 ms', url: 'https://jsonplaceholder.typicode.com/posts', reqHeaders: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (Chrome)', 'Origin': 'https://jsonplaceholder.typicode.com' }, resHeaders: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'max-age=43200', 'pragma': 'no-cache' }, body: [{ userId: 1, id: 1, title: 'sunt aut facere repellat provident occaecati', body: 'quia et suscipit...' }, '...99 posts más'] },
+  { name: 'users', status: 200, method: 'GET', type: 'fetch', size: '5.3 kB', time: '67 ms', url: 'https://jsonplaceholder.typicode.com/users', reqHeaders: { 'Accept': 'application/json', 'Content-Type': 'application/json' }, resHeaders: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'x-powered-by': 'Express' }, body: [{ id: 1, name: 'Leanne Graham', username: 'Bret', email: 'Sincere@april.biz' }, '...9 usuarios más'] },
+  { name: 'favicon.ico', status: 200, method: 'GET', type: 'image', size: '1.1 kB', time: '45 ms', url: 'https://jsonplaceholder.typicode.com/favicon.ico', reqHeaders: { 'Accept': 'image/avif,image/webp,image/apng,*/*' }, resHeaders: { 'content-type': 'image/x-icon', 'cache-control': 'public, max-age=86400' }, body: null },
+];
+
+let selectedNetworkRow = null;
+
+function runDevtoolsDemo() {
+  const tbody = document.getElementById('networkTable');
+  tbody.innerHTML = '';
+  document.getElementById('devtoolsDetail').style.display = 'none';
+  let delay = 0;
+  devtoolsRequests.forEach((r, i) => {
+    setTimeout(() => {
+      const tr = document.createElement('tr');
+      tr.className = 'network-row';
+      tr.style.borderBottom = '1px solid rgba(46,58,82,0.5)';
+      tr.innerHTML = `
+        <td style="padding:0.35rem 0.75rem;color:${r.type==='fetch'?'var(--cyan)':r.type==='image'?'var(--purple)':'var(--text)'};">${r.name}</td>
+        <td style="padding:0.35rem 0.75rem;color:${r.status===200?'var(--green)':'var(--red)'};">${r.status}</td>
+        <td style="padding:0.35rem 0.75rem;color:${r.method==='GET'?'var(--green)':'var(--blue-light)'};">${r.method}</td>
+        <td style="padding:0.35rem 0.75rem;color:var(--muted);">${r.type}</td>
+        <td style="padding:0.35rem 0.75rem;color:var(--muted);">${r.size}</td>
+        <td style="padding:0.35rem 0.75rem;color:var(--amber);">${r.time}</td>
+      `;
+      tr.onclick = () => selectNetworkRow(tr, r);
+      tbody.appendChild(tr);
+    }, delay);
+    delay += 180;
+  });
+}
+
+function selectNetworkRow(tr, r) {
+  document.querySelectorAll('.network-row').forEach(row => row.classList.remove('selected'));
+  tr.classList.add('selected');
+  document.getElementById('devtoolsDetail').style.display = 'block';
+  document.getElementById('devReqHeaders').innerHTML = Object.entries(r.reqHeaders)
+    .map(([k,v]) => `<span class="code-key">${k}:</span> <span class="code-str">${v}</span>`).join('\n');
+  document.getElementById('devResHeaders').innerHTML = Object.entries(r.resHeaders)
+    .map(([k,v]) => `<span class="code-key">${k}:</span> <span class="code-str">${v}</span>`).join('\n');
+  document.getElementById('devResBody').innerHTML = r.body !== null
+    ? syntaxHighlight(JSON.stringify(r.body, null, 2))
+    : '<span style="color:var(--muted)">(recurso binario / imagen)</span>';
+}
+
+/* ===================== BROWSER DEMO ===================== */
+async function navigateBrowser() {
+  const url = document.getElementById('browserSiteSelect').value;
+  const page = document.getElementById('browserPage');
+  const log = document.getElementById('browserNetworkLog');
+  const pill = document.getElementById('browserStatusPill');
+
+  page.innerHTML = '<span style="color:var(--amber)">Navegando...</span>';
+  log.innerHTML = '';
+  pill.innerHTML = '';
+
+  const addLog = (method, path, status, time, color) => {
+    const entry = document.createElement('div');
+    entry.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0.5rem;border-radius:4px;background:rgba(255,255,255,0.03);';
+    entry.innerHTML = `<span style="color:${color};font-weight:600;min-width:2.5rem;">${method}</span><span style="color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${path}</span><span style="color:${status===200?'var(--green)':'var(--red)'};">${status}</span><span style="color:var(--amber);min-width:3rem;text-align:right;">${time}ms</span>`;
+    log.appendChild(entry);
+  };
+
+  setTimeout(() => addLog('GET', url.replace('https://jsonplaceholder.typicode.com',''), 200, Math.floor(80+Math.random()*80), 'var(--green)'), 100);
+
+  try {
+    const t0 = Date.now();
+    pill.innerHTML = `<span class="status-pill pill-loading"><span class="dot"></span>Cargando...</span>`;
+    const res = await fetch(url);
+    const ms = Date.now() - t0;
+    const data = await res.json();
+
+    pill.innerHTML = `<span class="status-pill pill-ok"><span class="dot"></span>200 OK · ${ms}ms</span>`;
+
+    const items = Array.isArray(data) ? data.slice(0, 5) : [data];
+    page.innerHTML = items.map(item => {
+      const title = item.title || item.name || item.username || item.todo || '';
+      const sub = item.body ? item.body.slice(0, 60) + '...' : item.email || item.completed !== undefined ? `Completado: ${item.completed}` : '';
+      return `<div style="padding:0.5rem 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:2px;">${title}</div>
+        <div style="font-size:0.7rem;color:var(--muted);">${sub}</div>
+      </div>`;
+    }).join('') + (Array.isArray(data) && data.length > 5 ? `<div style="font-size:0.7rem;color:var(--muted);padding:0.5rem 0;">...y ${data.length - 5} elementos más</div>` : '');
+
+    setTimeout(() => addLog('GET', '/favicon.ico', 200, Math.floor(20+Math.random()*30), 'var(--green)'), 300);
+    if (url.includes('posts')) setTimeout(() => addLog('GET', '/users', 200, Math.floor(60+Math.random()*40), 'var(--green)'), 500);
+
+  } catch(e) {
+    pill.innerHTML = `<span class="status-pill pill-err"><span class="dot"></span>Error de red</span>`;
+    page.innerHTML = `<span style="color:var(--red)">No se pudo cargar la página.</span>`;
+  }
+}
+
+/* ===================== API CLIENT ===================== */
+let requestCount = 0;
+const history = [];
+
+function setUrl(url) { document.getElementById('urlInput').value = url; }
+
+function setEndpoint(method, url) {
+  document.getElementById('methodSelect').value = method;
+  document.getElementById('urlInput').value = url;
+  updateMethodColor();
+}
+
+function updateMethodColor() {
+  const s = document.getElementById('methodSelect');
+  const colors = { GET: '#22c55e', POST: '#3b82f6', PUT: '#f59e0b', PATCH: '#a855f7', DELETE: '#ef4444' };
+  s.style.color = colors[s.value] || '#e2e8f0';
+}
+
+updateMethodColor();
+
+function clearHistory() {
+  history.length = 0;
+  document.getElementById('historyList').innerHTML = '<span style="font-size:0.75rem;color:var(--muted);font-style:italic;">Sin peticiones aún...</span>';
+}
+
+async function sendRequest() {
+  const method = document.getElementById('methodSelect').value;
+  const url = document.getElementById('urlInput').value.trim();
+  const reqPane = document.getElementById('requestPane');
+  const resPane = document.getElementById('responsePane');
+  const statusPill = document.getElementById('statusPill');
+
+  const bodyMethods = ['POST', 'PUT', 'PATCH'];
+  const sampleBody = { title: 'Mi post de prueba', body: 'Contenido generado desde la demo interactiva', userId: 1 };
+
+  let fetchOpts = { method, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } };
+  if (bodyMethods.includes(method)) fetchOpts.body = JSON.stringify(sampleBody);
+
+  reqPane.innerHTML = `<span class="code-key">${method}</span> ${url}\n\n<span class="code-key">Headers:</span>\n  Content-Type: <span class="code-str">"application/json"</span>\n  Accept: <span class="code-str">"application/json"</span>`
+    + (bodyMethods.includes(method) ? `\n\n<span class="code-key">Body:</span>\n${syntaxHighlight(JSON.stringify(sampleBody, null, 2))}` : '');
+
+  statusPill.innerHTML = `<span class="status-pill pill-loading"><span class="dot"></span>Enviando...</span>`;
+  resPane.innerHTML = `<span style="color:var(--amber)">Cargando respuesta...</span>`;
+  document.getElementById('apiMetrics').style.display = 'none';
+
+  try {
+    const t0 = Date.now();
+    const res = await fetch(url, fetchOpts);
+    const ms = Date.now() - t0;
+    let data; let rawText = '';
+    try { rawText = await res.text(); data = JSON.parse(rawText); } catch(e) { data = null; }
+
+    const ok = res.ok;
+    const sizeBytes = new Blob([rawText]).size;
+    const sizeStr = sizeBytes > 1024 ? (sizeBytes/1024).toFixed(1) + ' kB' : sizeBytes + ' B';
+
+    requestCount++;
+    const statusColor = ok ? 'var(--green)' : 'var(--red)';
+    statusPill.innerHTML = `<span class="status-pill ${ok ? 'pill-ok' : 'pill-err'}"><span class="dot"></span>${res.status} ${res.statusText}</span>`;
+
+    const metrics = document.getElementById('apiMetrics');
+    metrics.style.display = 'flex';
+    document.getElementById('metricStatus').innerHTML = `<span style="color:${statusColor}">${res.status} ${res.statusText}</span>`;
+    document.getElementById('metricTime').textContent = ms + ' ms';
+    document.getElementById('metricSize').textContent = sizeStr;
+    document.getElementById('metricCount').textContent = requestCount;
+
+    const headers = {};
+    res.headers.forEach((v, k) => headers[k] = v);
+    const headerStr = Object.entries(headers).slice(0, 5)
+      .map(([k, v]) => `  <span class="code-key">${k}:</span> <span class="code-str">"${v}"</span>`).join('\n');
+    const bodyStr = data !== null ? syntaxHighlight(JSON.stringify(data, null, 2)) : '<span style="color:var(--muted)">(sin body)</span>';
+
+    resPane.innerHTML = `<span class="code-key">Status:</span> <span style="color:${statusColor}">${res.status} ${res.statusText}</span>\n\n<span class="code-key">Headers:</span>\n${headerStr}\n\n<span class="code-key">Body:</span>\n${bodyStr}`;
+
+    const methodColors = { GET:'#22c55e', POST:'#3b82f6', PUT:'#f59e0b', PATCH:'#a855f7', DELETE:'#ef4444' };
+    history.unshift({ method, url, status: res.status, ms, ok });
+    if (history.length > 8) history.pop();
+
+    const hl = document.getElementById('historyList');
+    hl.innerHTML = history.map(h => `
+      <div onclick="setEndpoint('${h.method}','${h.url}')" style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0.5rem;border-radius:4px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <span style="font-family:var(--mono);font-size:0.65rem;font-weight:600;color:${methodColors[h.method]};min-width:3rem;">${h.method}</span>
+        <span style="font-size:0.7rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h.url.replace('https://jsonplaceholder.typicode.com','')}</span>
+        <span style="font-family:var(--mono);font-size:0.65rem;color:${h.ok?'var(--green)':'var(--red)'};">${h.status}</span>
+        <span style="font-family:var(--mono);font-size:0.65rem;color:var(--amber);">${h.ms}ms</span>
+      </div>`).join('');
+
+  } catch(err) {
+    statusPill.innerHTML = `<span class="status-pill pill-err"><span class="dot"></span>Error de red</span>`;
+    resPane.innerHTML = `<span style="color:var(--red)">Error: ${err.message}</span>`;
+  }
+}
+
+function syntaxHighlight(json) {
+  return json
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+      if (/^"/.test(m)) return /:$/.test(m) ? `<span class="code-key">${m}</span>` : `<span class="code-str">${m}</span>`;
+      if (/true|false/.test(m)) return `<span class="code-val">${m}</span>`;
+      if (/null/.test(m)) return `<span style="color:var(--muted)">${m}</span>`;
+      return `<span class="code-num">${m}</span>`;
+    });
+}
+</script>
+
+</body>
+</html>
